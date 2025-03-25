@@ -1,41 +1,46 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
 import { ProjectService } from '../services/project.service';
-import { AuthGuard } from '../../common/guards/auth.guard';
-import { Request } from 'express';
-import { UpdateProjectDto } from '../dto/update-project.dto';
 import { CreateProjectDto } from '../dto/create-project.dto';
+import { UpdateProjectDto } from '../dto/update-project.dto';
+import { ApiTags, ApiBody, ApiParam, ApiResponse } from '@nestjs/swagger';
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: number; email: string; role: string };
-}
-
+@ApiTags('Project')
 @Controller('projects')
-@UseGuards(AuthGuard)
 export class ProjectController {
   constructor(private readonly projectService: ProjectService) {}
 
+  @Post()
+  @ApiBody({ type: CreateProjectDto })
+  @ApiResponse({ status: 201, description: 'Project created successfully' })
+  create(@Body() createProjectDto: CreateProjectDto) {
+    return this.projectService.create(createProjectDto);
+  }
+
   @Get()
-  getUserProjects(@Req() req: AuthenticatedRequest) {
-    return this.projectService.getUserProjects(req.user!.id);
+  @ApiResponse({ status: 200, description: 'List of all projects' })
+  findAll() {
+    return this.projectService.findAll();
   }
 
   @Get(':id')
-  getProjectById(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    return this.projectService.getProjectById(Number(id), req.user!.id, req.user!.role === 'admin');
-  }
-
-  @Post()
-  createProject(@Body() data: CreateProjectDto, @Req() req: AuthenticatedRequest) {
-    return this.projectService.createProject(data, req.user!.id);
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project details' })
+  findOne(@Param('id') id: string) {
+    return this.projectService.findOne(Number(id));
   }
 
   @Put(':id')
-  updateProject(@Param('id') id: string, @Body() data: UpdateProjectDto, @Req() req: AuthenticatedRequest) {
-    return this.projectService.updateProject(Number(id), data, req.user!.id, req.user!.role === 'admin');
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiBody({ type: UpdateProjectDto })
+  @ApiResponse({ status: 200, description: 'Project updated successfully' })
+  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
+    return this.projectService.update(Number(id), updateProjectDto);
   }
 
   @Delete(':id')
-  deleteProject(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    return this.projectService.deleteProject(Number(id), req.user!.id, req.user!.role === 'admin');
+  @ApiParam({ name: 'id', description: 'Project ID' })
+  @ApiResponse({ status: 200, description: 'Project deleted successfully' })
+  remove(@Param('id') id: string) {
+    return this.projectService.remove(Number(id));
   }
 }

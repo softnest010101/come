@@ -7,13 +7,16 @@ async function bootstrap() {
 
   app.enableCors();
 
-  // ✅ Swagger დოკუმენტაციის ჩართვა
   const config = new DocumentBuilder()
     .setTitle('COME API')
     .setDescription('COME პლატფორმის API დოკუმენტაცია')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'access-token',
+    )
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
 

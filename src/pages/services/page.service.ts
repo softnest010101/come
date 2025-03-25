@@ -7,16 +7,24 @@ export class PageService {
   constructor(private prisma: PrismaService) {}
 
   async createPage(data: CreatePageDto) {
-    return this.prisma.page.create({
-      data: {
-        name: data.name,
-        project: { connect: { id: data.projectId } },
-      },
-    });
+    try {
+      console.log('📄 Creating Page with data:', data);
+      const result = await this.prisma.page.create({
+        data: {
+          name: data.name,
+          project: { connect: { id: data.projectId } },
+        },
+      });
+      console.log('✅ Page created:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error in createPage:', error);
+      throw error;
+    }
   }
 
   async getAllPages() {
-    return this.prisma.page.findMany(); // ✅ ყველა გვერდის დაბრუნება
+    return this.prisma.page.findMany();
   }
 
   async getPagesByProject(projectId: number) {

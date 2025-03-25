@@ -1,34 +1,39 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { TemplateService } from '../services/template.service';
-import { AuthGuard } from '../../common/guards/auth.guard';
-import { Request } from 'express';
+import { CreateTemplateDto } from '../dto/create-template.dto';
+import { UpdateTemplateDto } from '../dto/update-template.dto';
+import { ApiTags, ApiBody, ApiResponse, ApiParam } from '@nestjs/swagger';
 
-interface AuthenticatedRequest extends Request {
-  user?: { id: number; email: string; role: string };
-}
-
+@ApiTags('Template')
 @Controller('templates')
-@UseGuards(AuthGuard)
 export class TemplateController {
   constructor(private readonly templateService: TemplateService) {}
 
-  @Get()
-  getAllTemplates(@Req() req: AuthenticatedRequest) {
-    return this.templateService.getAllTemplates(req.user!.id);
+  @Post()
+  @ApiBody({ type: CreateTemplateDto })
+  @ApiResponse({ status: 201, description: 'Template successfully created' })
+  create(@Body() createTemplateDto: CreateTemplateDto) {
+    return this.templateService.create(createTemplateDto);
   }
 
-  @Post()
-  createTemplate(@Body() data: { name: string; description?: string; projectId: number }, @Req() req: AuthenticatedRequest) {
-    return this.templateService.createTemplate(data, req.user!.id);
+  @Get()
+  @ApiResponse({ status: 200, description: 'List of all templates' })
+  findAll() {
+    return this.templateService.findAll();
   }
 
   @Put(':id')
-  updateTemplate(@Param('id') id: string, @Body() data: { name?: string; description?: string }, @Req() req: AuthenticatedRequest) {
-    return this.templateService.updateTemplate(Number(id), data, req.user!.id);
+  @ApiParam({ name: 'id', description: 'Template ID' })
+  @ApiBody({ type: UpdateTemplateDto })
+  @ApiResponse({ status: 200, description: 'Template updated successfully' })
+  update(@Param('id') id: string, @Body() updateTemplateDto: UpdateTemplateDto) {
+    return this.templateService.update(Number(id), updateTemplateDto);
   }
 
   @Delete(':id')
-  deleteTemplate(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    return this.templateService.deleteTemplate(Number(id), req.user!.id);
+  @ApiParam({ name: 'id', description: 'Template ID' })
+  @ApiResponse({ status: 200, description: 'Template deleted successfully' })
+  remove(@Param('id') id: string) {
+    return this.templateService.remove(Number(id));
   }
 }
