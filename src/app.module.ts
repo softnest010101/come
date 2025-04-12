@@ -1,27 +1,26 @@
 import { Module } from '@nestjs/common';
-import { AdminModule } from './admin/admin.module';
+import { ConfigModule } from '@nestjs/config';
+
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
-import { RoleModule } from './role/role.module';
-import { ProjectModule } from './projects/project.module';
-import { TemplateModule } from './templates/template.module';
-import { WidgetModule } from './widgets/widget.module';
-import { PageModule } from './pages/page.module';
-import { ComponentModule } from './components/component.module'; // ✅ ComponentModule დამატებულია
-import { PrismaService } from './prisma/prisma.service';
+import { ProjectModule } from './project/project.module';
+import { PageModule } from './page/page.module'; // Import PageModule
+import { ComponentModule } from './component/component.module'; // Import ComponentModule
+import { WidgetModule } from './widget/widget.module'; // Import WidgetModule
+import { WidgetInstanceModule } from './widget-instance/widget-instance.module'; // Import WidgetInstanceModule
+import { TemplateModule } from './template/template.module'; // Import TemplateModule
 
 @Module({
   imports: [
-    AdminModule,
+    TemplateModule, // Added TemplateModule
+    WidgetInstanceModule, // Added WidgetInstanceModule
+    ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     UserModule,
-    RoleModule,
     ProjectModule,
-    TemplateModule,
-    WidgetModule,
-    PageModule,
-    ComponentModule, // ✅ ComponentModule დამატებულია
+    PageModule, // Add PageModule to imports
+    ComponentModule, // Add ComponentModule to imports
+    WidgetModule, // Add WidgetModule to imports
   ],
-  providers: [PrismaService],
 })
 export class AppModule {}

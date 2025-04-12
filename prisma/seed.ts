@@ -1,36 +1,37 @@
-// prisma/seed.ts
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // 👉 Step 1: Add Role
-  const role = await prisma.role.upsert({
-    where: { name: 'Admin' },
+  const hashedPassword = bcrypt.hashSync('admin123', 10); // ✅ Hashes 'admin123'
+
+  // Seed the admin role
+  await prisma.role.upsert({
+    where: { name: 'admin' },
     update: {},
-    create: {
-      name: 'Admin',
-    },
+    create: { name: 'admin' },
   });
 
-  // 👉 Step 2: Add User with Role
-  const user = await prisma.user.upsert({
+  // Seed the admin user
+  await prisma.user.upsert({
     where: { email: 'admin@example.com' },
-    update: {},
+    update: { password: hashedPassword }, // ✅ Updates the password
     create: {
       email: 'admin@example.com',
-      password: 'test1234', // ან დააყენე hashed პაროლი
-      roleId: role.id,
+      password: hashedPassword,
+      role: {
+        connect: { name: 'admin' }, // ✅ Connects to the admin role
+      },
     },
   });
 
-  console.log('✅ Seed completed successfully');
-  console.log('🧑‍💻 User created:', user.email);
+  console.log('✅ Seed complete');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error during seeding:', e);
+    console.error(e);
     process.exit(1);
   })
   .finally(() => {

@@ -1,0 +1,7 @@
+{
+  "name": "My Custom Widget",
+  "config": {
+    "color": "green",
+    "size": "medium"
+  }
+}

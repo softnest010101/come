@@ -1,16 +1,24 @@
-// src/user/dto/update-user.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
+import { IsOptional, IsString, IsEmail } from 'class-validator';
 
 export class UpdateUserDto {
-  @ApiProperty({ required: false, description: 'User\'s first name' })
-  firstName?: string;
+  @ApiProperty({ required: false, example: 'john@example.com' })
+  @IsOptional()
+  @IsEmail()
+  email!: string;
 
-  @ApiProperty({ required: false, description: 'User\'s last name' })
-  lastName?: string;
+  @ApiProperty({ required: false, example: 'John' })
+  @IsOptional()
+  @IsString()
+  firstName!: string;
 
-  @ApiProperty({ required: false, description: 'URL to user\'s avatar image' })
-  avatarUrl?: string;
+  @ApiProperty({ required: false, example: 'Doe' })
+  @IsOptional()
+  @IsString()
+  lastName!: string;
 
-  @ApiProperty({ required: false, description: 'Role ID assigned to user' })
-  roleId?: number;
+  @ApiProperty({ required: false, example: 'https://example.com/avatar.png' })
+  @IsOptional()
+  @IsString()
+  avatarUrl!: string;
 }
