@@ -22,6 +22,6 @@
     "strict": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "prisma/**/*.ts", "src/common/types/**/*.ts"],
+  "include": ["src/**/*.ts", "prisma/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }

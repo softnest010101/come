@@ -1,26 +1,30 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
 
-import { AuthModule } from './auth/auth.module';
-import { UserModule } from './user/user.module';
-import { ProjectModule } from './project/project.module';
-import { PageModule } from './page/page.module'; // Import PageModule
-import { ComponentModule } from './component/component.module'; // Import ComponentModule
-import { WidgetModule } from './widget/widget.module'; // Import WidgetModule
-import { WidgetInstanceModule } from './widget-instance/widget-instance.module'; // Import WidgetInstanceModule
-import { TemplateModule } from './template/template.module'; // Import TemplateModule
+import { PrismaModule } from "./prisma/prisma.module"; // Import PrismaModule
+import { AuthModule } from "./auth/auth.module";
+import { UserModule } from "./user/user.module";
+import { ProjectModule } from "./project/project.module";
+import { PageModule } from "./page/page.module";
+import { ComponentModule } from "./component/component.module";
+import { WidgetModule } from "./widget/widget.module";
+import { WidgetInstanceModule } from "./widget-instance/widget-instance.module";
+import { TemplateModule } from "./template/template.module";
+import { ComponentInstanceModule } from "./component-instances/component-instance.module"; // Corrected path
 
 @Module({
   imports: [
-    TemplateModule, // Added TemplateModule
-    WidgetInstanceModule, // Added WidgetInstanceModule
+    PrismaModule, // Added PrismaModule
     ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     UserModule,
     ProjectModule,
-    PageModule, // Add PageModule to imports
-    ComponentModule, // Add ComponentModule to imports
-    WidgetModule, // Add WidgetModule to imports
+    PageModule,
+    ComponentModule,
+    WidgetModule,
+    WidgetInstanceModule,
+    TemplateModule,
+    ComponentInstanceModule, // Added ComponentInstanceModule
   ],
 })
 export class AppModule {}
