@@ -1,30 +1,29 @@
 import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
-
-import { PrismaModule } from "./prisma/prisma.module"; // Import PrismaModule
 import { AuthModule } from "./auth/auth.module";
 import { UserModule } from "./user/user.module";
+import { RoleModule } from "./role/role.module";
+import { PrismaModule } from "./prisma/prisma.module";
 import { ProjectModule } from "./project/project.module";
 import { PageModule } from "./page/page.module";
 import { ComponentModule } from "./component/component.module";
 import { WidgetModule } from "./widget/widget.module";
+import { ComponentInstanceModule } from "./component-instance/component-instance.module";
 import { WidgetInstanceModule } from "./widget-instance/widget-instance.module";
-import { TemplateModule } from "./template/template.module";
-import { ComponentInstanceModule } from "./component-instances/component-instance.module"; // Corrected path
+import { CanvasModule } from "./canvas/canvas.module"; // ✅ დამატებულია
 
 @Module({
   imports: [
-    PrismaModule, // Added PrismaModule
-    ConfigModule.forRoot({ isGlobal: true }),
     AuthModule,
     UserModule,
+    RoleModule,
+    PrismaModule,
     ProjectModule,
     PageModule,
     ComponentModule,
     WidgetModule,
+    ComponentInstanceModule,
     WidgetInstanceModule,
-    TemplateModule,
-    ComponentInstanceModule, // Added ComponentInstanceModule
+    CanvasModule, // ✅ აქ რეგისტრირდება
   ],
 })
 export class AppModule {}

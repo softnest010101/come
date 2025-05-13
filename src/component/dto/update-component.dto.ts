@@ -1,19 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsObject } from 'class-validator';
+// ✅ my-platform/src/component/dto/update-component.dto.ts
+
+import { IsOptional, IsString } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class UpdateComponentDto {
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: "Updated name", required: false })
   @IsOptional()
   @IsString()
-  name!: string;
+  name?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: "Updated description", required: false })
   @IsOptional()
   @IsString()
-  type!: string;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsObject()
-  config!: Record<string, any>;
+  description?: string;
 }

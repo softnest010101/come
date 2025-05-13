@@ -1,18 +1,21 @@
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateProjectDto } from "./dto/create-project.dto";
+import { UpdateProjectDto } from "./dto/update-project.dto";
 import {
-  Injectable,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateProjectDto } from './dto/create-project.dto';
-import { UpdateProjectDto } from './dto/update-project.dto';
+  RelationshipService,
+  SupportedModel,
+} from "../shared/relationship.service";
 
 @Injectable()
 export class ProjectService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly relationshipService: RelationshipService,
+  ) {}
 
   async create(userId: number, dto: CreateProjectDto) {
-    return await this.prisma.project.create({
+    return this.prisma.project.create({
       data: {
         name: dto.name,
         description: dto.description,
@@ -21,42 +24,76 @@ export class ProjectService {
     });
   }
 
-  async findMyProjects(userId: number) {
-    return await this.prisma.project.findMany({
+  async findMy(userId: number) {
+    return this.prisma.project.findMany({
       where: { ownerId: userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 
-  async findOne(id: number, userId: number) {
+  async findOne(id: number) {
     const project = await this.prisma.project.findUnique({
       where: { id },
     });
 
-    if (!project) throw new NotFoundException('Project not found');
-    if (project.ownerId !== userId)
-      throw new ForbiddenException('Access denied');
+    if (!project) {
+      throw new NotFoundException("Project not found");
+    }
 
     return project;
   }
 
-  async update(id: number, userId: number, dto: UpdateProjectDto) {
-    const project = await this.findOne(id, userId);
-
-    return await this.prisma.project.update({
-      where: { id: project.id },
+  async update(id: number, dto: UpdateProjectDto) {
+    return this.prisma.project.update({
+      where: { id },
       data: {
-        name: dto.name ?? project.name,
-        description: dto.description ?? project.description,
-        updatedAt: new Date(),
+        name: dto.name,
+        description: dto.description,
       },
     });
   }
 
-  async remove(id: number, userId: number) {
-    const project = await this.findOne(id, userId);
-    return await this.prisma.project.delete({
-      where: { id: project.id },
-    });
+  async remove(id: number) {
+    return this.prisma.project.delete({ where: { id } });
+  }
+
+  // ✅ Project ↔ Target (e.g., Page, Component...) ბმის ფუნქცია
+  async linkTo(
+    projectId: number,
+    targetModel: SupportedModel,
+    targetId: number,
+  ) {
+    return this.relationshipService.linkToSource("project", projectId, [
+      { targetModel, targetId },
+    ]);
+  }
+
+  // ✅ მრავალ ელემენტზე ბმის ფუნქცია
+  async bulkLink(
+    projectId: number,
+    targetModel: SupportedModel,
+    targetIds: number[],
+  ) {
+    return this.relationshipService.bulkLinkToSource(
+      "project",
+      projectId,
+      targetModel,
+      targetIds,
+    );
+  }
+
+  // ✅ სრული საბმისალ ბმის ვარიანტი
+  async linkCustom(
+    sourceModel: SupportedModel,
+    sourceId: number,
+    targetModel: SupportedModel,
+    targetId: number,
+  ) {
+    return this.relationshipService.linkEntities(
+      sourceModel,
+      sourceId,
+      targetModel,
+      targetId,
+    );
   }
 }

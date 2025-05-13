@@ -1,35 +1,25 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UnauthorizedException,
-  HttpCode,
-} from '@nestjs/common';
-import { ApiTags, ApiBody, ApiResponse } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { LoginDto } from './dto/login.dto';
+import { Controller, Post, Body } from "@nestjs/common";
+import { ApiTags, ApiBody, ApiResponse } from "@nestjs/swagger";
+import { AuthService } from "./auth.service";
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
 
-@ApiTags('Auth')
-@Controller('auth')
+@ApiTags("Auth")
+@Controller("auth")
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private authService: AuthService) {}
 
-  @Post('login')
-  @HttpCode(200)
+  @Post("register")
+  @ApiBody({ type: RegisterDto })
+  @ApiResponse({ status: 201, description: "User registered" })
+  register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  @Post("login")
   @ApiBody({ type: LoginDto })
-  @ApiResponse({
-    status: 200,
-    description: 'Returns access token on successful login',
-    schema: {
-      example: {
-        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() dto: LoginDto): Promise<{ accessToken: string }> {
-    const token = await this.authService.validateUser(dto);
-    if (!token) throw new UnauthorizedException('Invalid credentials');
-    return token;
+  @ApiResponse({ status: 200, description: "JWT token returned" })
+  login(@Body() dto: LoginDto) {
+    return this.authService.login(dto);
   }
 }

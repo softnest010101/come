@@ -4,88 +4,117 @@ import {
   Get,
   Patch,
   Delete,
-  Param,
   Body,
-  Req,
+  Param,
   UseGuards,
+  Req,
   ParseIntPipe,
-} from '@nestjs/common';
-import { PageService } from './page.service';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+} from "@nestjs/common";
+import { Request } from "express";
+import { PageService } from "./page.service";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CreatePageDto } from "./dto/create-page.dto";
+import { UpdatePageDto } from "./dto/update-page.dto";
 import {
   ApiBearerAuth,
   ApiTags,
-  ApiBody,
   ApiResponse,
+  ApiBody,
   ApiParam,
-  ApiOperation,
-} from '@nestjs/swagger';
-import { CreatePageDto } from './dto/create-page.dto';
-import { UpdatePageDto } from './dto/update-page.dto';
-import { Request } from 'express';
+} from "@nestjs/swagger";
+import { DuplicationService } from "../shared/duplication.service";
+import {
+  RelationshipService,
+  SupportedModel,
+} from "../shared/relationship.service";
 
-@ApiTags('Page')
+@ApiTags("Pages")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('pages')
+@Controller("pages")
 export class PageController {
-  constructor(private readonly pageService: PageService) {}
+  constructor(
+    private readonly pageService: PageService,
+    private readonly duplicationService: DuplicationService,
+    private readonly relationshipService: RelationshipService,
+  ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new page' })
   @ApiBody({ type: CreatePageDto })
-  @ApiResponse({ status: 201, description: 'Page created' })
+  @ApiResponse({ status: 201, description: "Page created" })
   create(@Req() req: Request, @Body() dto: CreatePageDto) {
-    const userId = req.user?.id;
-    return this.pageService.create(userId!, dto);
+    const userId = (req.user as { id: number }).id;
+    return this.pageService.create(userId, dto);
   }
 
-  @Get('my')
-  @ApiOperation({ summary: 'Get pages owned by authenticated user' })
-  @ApiResponse({ status: 200, description: 'My pages list' })
-  findMine(@Req() req: Request) {
-    const userId = req.user?.id;
-    return this.pageService.findMyPages(userId!);
+  @Get("my")
+  @ApiResponse({ status: 200, description: "List of user's pages" })
+  findMy(@Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
+    return this.pageService.findMy(userId);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get one page by ID (with ownership check)' })
-  @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Page returned' })
-  findOne(@Req() req: Request, @Param('id', ParseIntPipe) id: number) {
-    const userId = req.user?.id;
-    return this.pageService.findOne(id, userId!);
+  @Get(":id")
+  @ApiParam({ name: "id", type: Number })
+  @ApiResponse({ status: 200, description: "Single page by ID" })
+  findOne(@Param("id", ParseIntPipe) id: number) {
+    return this.pageService.findOne(id);
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update a page' })
-  @ApiParam({ name: 'id', type: Number })
+  @Patch(":id")
+  @ApiParam({ name: "id", type: Number })
   @ApiBody({ type: UpdatePageDto })
-  @ApiResponse({ status: 200, description: 'Page updated' })
-  update(
-    @Req() req: Request,
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdatePageDto,
+  @ApiResponse({ status: 200, description: "Page updated" })
+  update(@Param("id", ParseIntPipe) id: number, @Body() dto: UpdatePageDto) {
+    return this.pageService.update(id, dto);
+  }
+
+  @Delete(":id")
+  @ApiParam({ name: "id", type: Number })
+  @ApiResponse({ status: 200, description: "Page deleted" })
+  remove(@Param("id", ParseIntPipe) id: number) {
+    return this.pageService.remove(id);
+  }
+
+  @Post(":id/duplicate")
+  @ApiParam({ name: "id", type: Number })
+  @ApiResponse({ status: 201, description: "Page duplicated" })
+  duplicate(@Param("id", ParseIntPipe) id: number) {
+    return this.duplicationService.duplicatePage(id);
+  }
+
+  @Post(":id/link/:targetModel/:targetId")
+  @ApiParam({ name: "id", type: Number })
+  @ApiParam({ name: "targetModel", type: String })
+  @ApiParam({ name: "targetId", type: Number })
+  @ApiResponse({ status: 200, description: "Linked single model" })
+  linkSingle(
+    @Param("id", ParseIntPipe) pageId: number,
+    @Param("targetModel") targetModel: SupportedModel,
+    @Param("targetId", ParseIntPipe) targetId: number,
   ) {
-    const userId = req.user?.id;
-    return this.pageService.update(id, userId!, dto);
+    return this.pageService.linkTo(pageId, targetModel, targetId);
   }
 
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete a page' })
-  @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 200, description: 'Page deleted' })
-  remove(@Req() req: Request, @Param('id', ParseIntPipe) id: number) {
-    const userId = req.user?.id;
-    return this.pageService.remove(id, userId!);
-  }
-
-  @Post(':id/duplicate')
-  @ApiOperation({ summary: 'Duplicate a page with components and widgets' })
-  @ApiParam({ name: 'id', type: Number })
-  @ApiResponse({ status: 201, description: 'Page duplicated successfully' })
-  duplicatePage(@Req() req: Request, @Param('id', ParseIntPipe) id: number) {
-    const userId = req.user?.id;
-    return this.pageService.duplicate(id, userId!);
+  @Post(":id/bulk-link")
+  @ApiParam({ name: "id", type: Number })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        targetModel: { type: "string" },
+        targetIds: {
+          type: "array",
+          items: { type: "number" },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: "Bulk-linked models" })
+  bulkLink(
+    @Param("id", ParseIntPipe) pageId: number,
+    @Body() body: { targetModel: SupportedModel; targetIds: number[] },
+  ) {
+    return this.pageService.bulkLink(pageId, body.targetModel, body.targetIds);
   }
 }

@@ -1,24 +1,16 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsNumber, IsObject } from 'class-validator';
+// ✅ my-platform/src/component/dto/create-component.dto.ts
+
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateComponentDto {
-  @ApiProperty()
+  @ApiProperty({ description: "Component name" })
+  @IsNotEmpty()
   @IsString()
-  @IsNotEmpty()
-  name!: string;
+  name!: string; // ✅ fixed with non-null assertion
 
-  @ApiProperty()
+  @ApiProperty({ description: "Optional description", required: false })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  type!: string;
-
-  @ApiProperty()
-  @IsObject()
-  @IsNotEmpty()
-  config!: Record<string, any>;
-
-  @ApiProperty()
-  @IsNumber()
-  @IsNotEmpty()
-  pageId!: number;
+  description?: string;
 }

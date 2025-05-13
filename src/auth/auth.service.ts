@@ -1,33 +1,59 @@
-import { Injectable } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { LoginDto } from './dto/login.dto';
-import * as bcrypt from 'bcryptjs';
-import { JwtService } from '@nestjs/jwt';
+import {
+  Injectable,
+  ConflictException,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { PrismaService } from "../prisma/prisma.service";
+import * as bcrypt from "bcryptjs";
+import { RegisterDto } from "./dto/register.dto";
+import { LoginDto } from "./dto/login.dto";
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService,
+    private jwt: JwtService,
   ) {}
 
-  async validateUser(dto: LoginDto) {
+  async register(dto: RegisterDto) {
+    const existing = await this.prisma.user.findUnique({
+      where: { email: dto.email },
+    });
+    if (existing) throw new ConflictException("User already exists");
+
+    const role = await this.prisma.role.findUnique({
+      where: { name: dto.roleName },
+    });
+    if (!role) throw new ConflictException("Role not found");
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email,
+        password: bcrypt.hashSync(dto.password, 10),
+        roleId: role.id,
+      },
+    });
+
+    return { message: "Registered successfully", userId: user.id };
+  }
+
+  async login(dto: LoginDto) {
     const user = await this.prisma.user.findUnique({
       where: { email: dto.email },
       include: { role: true },
     });
-    if (!user) return null;
 
-    const passwordValid = bcrypt.compareSync(dto.password, user.password);
-    if (!passwordValid) return null;
+    if (!user || !bcrypt.compareSync(dto.password, user.password)) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
 
-    return this.generateToken(user.id, user.email, user.role.name);
-  }
+    const token = this.jwt.sign({
+      userId: user.id,
+      email: user.email,
+      role: user.role.name,
+    });
 
-  generateToken(userId: number, email: string, role: string) {
-    const payload = { userId, email, role };
-    return {
-      accessToken: this.jwtService.sign(payload),
-    };
+    return { access_token: token };
   }
 }

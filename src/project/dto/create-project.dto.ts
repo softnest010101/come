@@ -1,14 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateProjectDto {
-  @ApiProperty()
-  @IsString()
+  @ApiProperty({ description: "Project name" })
   @IsNotEmpty()
-  name!: string;
+  @IsString()
+  name!: string; // ✅ fixed with non-null assertion
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: "Optional description", required: false })
   @IsOptional()
   @IsString()
-  description!: string;
+  description?: string;
 }

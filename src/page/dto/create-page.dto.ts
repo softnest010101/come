@@ -1,25 +1,14 @@
-// src/page/dto/create-page.dto.ts
-
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsOptional, IsInt } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class CreatePageDto {
-  @ApiProperty()
-  @IsString()
+  @ApiProperty({ description: "Page name" })
   @IsNotEmpty()
+  @IsString()
   name!: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: "Optional description", required: false })
   @IsOptional()
   @IsString()
   description?: string;
-
-  @ApiProperty()
-  @IsInt()
-  projectId!: number;
-
-  @ApiProperty({ required: false })
-  @IsOptional()
-  @IsInt()
-  templateId?: number; // ✅ optional
 }

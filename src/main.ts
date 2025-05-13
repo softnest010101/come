@@ -1,29 +1,32 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+// 📁 my-platform/src/main.ts
+
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./app.module";
+import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalPipes(new ValidationPipe()); // Enable validation globally
-  app.enableCors();
+  // ✅ აუცილებელია CORS-ის ჩართვა Next.js-თან მუშაობისთვის
+  app.enableCors({
+    origin: "http://localhost:3001", // შეცვალე საჭიროებისამებრ
+    credentials: true,
+  });
+
+  app.setGlobalPrefix("api"); // ✅ საჭიროა რომ ყველა route იყოს /api/... ფორმატით
 
   const config = new DocumentBuilder()
-    .setTitle('COME API')
-    .setDescription('API documentation for COME platform') // Updated description
-    .setVersion('1.0')
-    .addBearerAuth() // ✅ ეს საჭიროა Authorize ღილაკისთვის
+    .setTitle("Backend API")
+    .setVersion("1.0")
+    .addBearerAuth()
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document); // Swagger on /api
+  const doc = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup("api", app, doc);
 
-  const port = 3000; // Explicitly set to 3001
-  await app.listen(port);
-  console.log(`🚀 Application is running on: http://localhost:${port}`);
+  await app.listen(3000);
 }
 
 bootstrap().catch((err) => {
-  console.error('Error during application bootstrap:', err);
+  console.error("Error during application bootstrap:", err);
 });

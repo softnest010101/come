@@ -1,21 +1,14 @@
-import { IsString, IsObject } from 'class-validator';
-
-type InputJsonValue = Record<string, any>;
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class CreateWidgetDto {
+  @ApiProperty({ description: "Widget name" })
+  @IsNotEmpty()
   @IsString()
   name!: string;
 
-  @IsObject()
-  config!: InputJsonValue; // Changed to use @IsObject()
+  @ApiProperty({ description: "Optional description", required: false })
+  @IsOptional()
+  @IsString()
+  description?: string;
 }
-
-// Example widget for demonstration purposes
-const exampleWidget = {
-  name: 'Test Widget',
-  config: {
-    color: 'blue',
-    width: 100,
-  }
-};
-console.log(exampleWidget); // Using the variable to avoid unused error

@@ -1,92 +1,129 @@
+// ✅ my-platform/src/component/component.controller.ts
+
 import {
   Controller,
   Post,
   Get,
   Patch,
   Delete,
-  Param,
   Body,
-  Req,
+  Param,
   UseGuards,
+  Req,
   ParseIntPipe,
-} from '@nestjs/common';
-import { ComponentService } from './component.service';
-import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+} from "@nestjs/common";
+import { Request } from "express";
+import { ComponentService } from "./component.service";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CreateComponentDto } from "./dto/create-component.dto";
+import { UpdateComponentDto } from "./dto/update-component.dto";
 import {
   ApiBearerAuth,
   ApiTags,
-  ApiBody,
   ApiResponse,
+  ApiBody,
   ApiParam,
-} from '@nestjs/swagger';
-import { CreateComponentDto } from './dto/create-component.dto';
-import { UpdateComponentDto } from './dto/update-component.dto';
-import { Request } from 'express';
+} from "@nestjs/swagger";
+import { DuplicationService } from "../shared/duplication.service";
+import {
+  RelationshipService,
+  SupportedModel,
+} from "../shared/relationship.service";
 
-interface User {
-  id: number; // ✅ ვასწორებთ userId → id
-  email: string;
-  role: string;
-}
-
-interface AuthenticatedRequest extends Request {
-  user: User;
-}
-
-@ApiTags('Component')
+@ApiTags("Components")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
-@Controller('components')
+@Controller("components")
 export class ComponentController {
-  constructor(private readonly service: ComponentService) {}
+  constructor(
+    private readonly componentService: ComponentService,
+    private readonly duplicationService: DuplicationService,
+    private readonly relationshipService: RelationshipService,
+  ) {}
 
   @Post()
   @ApiBody({ type: CreateComponentDto })
-  @ApiResponse({ status: 201, description: 'Component created' })
-  create(@Req() req: AuthenticatedRequest, @Body() dto: CreateComponentDto) {
-    const userId = req.user?.id; // ✅ ვასწორებთ აქაც
-    return this.service.create(userId, dto);
+  @ApiResponse({ status: 201, description: "Component created" })
+  create(@Req() req: Request, @Body() dto: CreateComponentDto) {
+    const userId = (req.user as { id: number }).id;
+    return this.componentService.create(userId, dto);
   }
 
-  @Get('by-page/:pageId')
-  @ApiParam({ name: 'pageId', type: Number })
-  findByPage(
-    @Req() req: AuthenticatedRequest,
-    @Param('pageId', ParseIntPipe) pageId: number,
-  ) {
-    const userId = req.user?.id;
-    return this.service.findByPage(pageId, userId);
+  @Get("my")
+  @ApiResponse({ status: 200, description: "List of user's components" })
+  findMy(@Req() req: Request) {
+    const userId = (req.user as { id: number }).id;
+    return this.componentService.findMy(userId);
   }
 
-  @Get(':id')
-  @ApiParam({ name: 'id', type: Number })
-  findOne(
-    @Req() req: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
-    const userId = req.user?.id;
-    return this.service.findOne(id, userId);
+  @Get(":id")
+  @ApiParam({ name: "id", type: Number })
+  @ApiResponse({ status: 200, description: "Single component by ID" })
+  findOne(@Param("id", ParseIntPipe) id: number) {
+    return this.componentService.findOne(id);
   }
 
-  @Patch(':id')
-  @ApiParam({ name: 'id', type: Number })
+  @Patch(":id")
+  @ApiParam({ name: "id", type: Number })
   @ApiBody({ type: UpdateComponentDto })
+  @ApiResponse({ status: 200, description: "Component updated" })
   update(
-    @Req() req: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+    @Param("id", ParseIntPipe) id: number,
     @Body() dto: UpdateComponentDto,
   ) {
-    const userId = req.user?.id;
-    return this.service.update(id, userId, dto);
+    return this.componentService.update(id, dto);
   }
 
-  @Delete(':id')
-  @ApiParam({ name: 'id', type: Number })
-  remove(
-    @Req() req: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
+  @Delete(":id")
+  @ApiParam({ name: "id", type: Number })
+  @ApiResponse({ status: 200, description: "Component deleted" })
+  remove(@Param("id", ParseIntPipe) id: number) {
+    return this.componentService.remove(id);
+  }
+
+  @Post(":id/duplicate")
+  @ApiParam({ name: "id", type: Number })
+  @ApiResponse({ status: 201, description: "Component duplicated" })
+  duplicate(@Param("id", ParseIntPipe) id: number) {
+    return this.duplicationService.duplicateProject(id); // შემდეგ ჩასვით დუბლირების შესაბამისი მეთოდი
+  }
+
+  @Post(":id/link/:targetModel/:targetId")
+  @ApiParam({ name: "id", type: Number })
+  @ApiParam({ name: "targetModel", type: String })
+  @ApiParam({ name: "targetId", type: Number })
+  @ApiResponse({ status: 200, description: "Linked single model" })
+  linkSingle(
+    @Param("id", ParseIntPipe) componentId: number,
+    @Param("targetModel") targetModel: SupportedModel,
+    @Param("targetId", ParseIntPipe) targetId: number,
   ) {
-    const userId = req.user?.id;
-    return this.service.remove(id, userId);
+    return this.componentService.linkTo(componentId, targetModel, targetId);
+  }
+
+  @Post(":id/bulk-link")
+  @ApiParam({ name: "id", type: Number })
+  @ApiBody({
+    schema: {
+      type: "object",
+      properties: {
+        targetModel: { type: "string" },
+        targetIds: {
+          type: "array",
+          items: { type: "number" },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 200, description: "Bulk-linked models" })
+  bulkLink(
+    @Param("id", ParseIntPipe) componentId: number,
+    @Body() body: { targetModel: SupportedModel; targetIds: number[] },
+  ) {
+    return this.componentService.bulkLink(
+      componentId,
+      body.targetModel,
+      body.targetIds,
+    );
   }
 }

@@ -1,33 +1,98 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateWidgetDto } from './dto/create-widget.dto';
-import { UpdateWidgetDto } from './dto/update-widget.dto';
+// ✅ my-platform/src/widget/widget.service.ts
+
+import { Injectable, NotFoundException } from "@nestjs/common";
+import { PrismaService } from "../prisma/prisma.service";
+import { CreateWidgetDto } from "./dto/create-widget.dto";
+import { UpdateWidgetDto } from "./dto/update-widget.dto";
+import {
+  RelationshipService,
+  SupportedModel,
+} from "../shared/relationship.service";
 
 @Injectable()
 export class WidgetService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly relationshipService: RelationshipService,
+  ) {}
 
-  create(dto: CreateWidgetDto) {
-    return this.prisma.widget.create({ data: dto });
+  async create(userId: number, dto: CreateWidgetDto) {
+    return this.prisma.widget.create({
+      data: {
+        name: dto.name,
+        description: dto.description,
+        ownerId: userId,
+      },
+    });
   }
 
-  findAll() {
-    return this.prisma.widget.findMany({ orderBy: { createdAt: 'desc' } });
+  async findMy(userId: number) {
+    return this.prisma.widget.findMany({
+      where: { ownerId: userId },
+      orderBy: { createdAt: "desc" },
+    });
   }
 
   async findOne(id: number) {
-    const widget = await this.prisma.widget.findUnique({ where: { id } });
-    if (!widget) throw new NotFoundException('Widget not found');
+    const widget = await this.prisma.widget.findUnique({
+      where: { id },
+    });
+
+    if (!widget) {
+      throw new NotFoundException("Widget not found");
+    }
+
     return widget;
   }
 
   async update(id: number, dto: UpdateWidgetDto) {
-    await this.findOne(id);
-    return this.prisma.widget.update({ where: { id }, data: dto });
+    return this.prisma.widget.update({
+      where: { id },
+      data: {
+        name: dto.name,
+        description: dto.description,
+      },
+    });
   }
 
   async remove(id: number) {
-    await this.findOne(id);
     return this.prisma.widget.delete({ where: { id } });
+  }
+
+  async linkTo(
+    widgetId: number,
+    targetModel: SupportedModel,
+    targetId: number,
+  ) {
+    return this.relationshipService.linkToSource("widget", widgetId, [
+      { targetModel, targetId },
+    ]);
+  }
+
+  async bulkLink(
+    widgetId: number,
+    targetModel: SupportedModel,
+    targetIds: number[],
+  ) {
+    return this.relationshipService.bulkLinkToSource(
+      "widget",
+      widgetId,
+      targetModel,
+      targetIds,
+    );
+  }
+
+  async linkCustom(
+    sourceModel: SupportedModel,
+    sourceId: number,
+    targetModel: SupportedModel,
+    targetId: number,
+  ) {
+    return this.relationshipService.linkEntities(
+      sourceModel,
+      sourceId,
+      targetModel,
+      targetId,
+    );
   }
 }

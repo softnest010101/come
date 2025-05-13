@@ -1,14 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString } from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class UpdateProjectDto {
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: "Updated name", required: false })
   @IsOptional()
   @IsString()
-  name!: string;
+  name?: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({ description: "Updated description", required: false })
   @IsOptional()
   @IsString()
-  description!: string;
+  description?: string;
 }
